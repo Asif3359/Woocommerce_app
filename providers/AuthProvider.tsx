@@ -69,7 +69,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     try {
       await AsyncStorage.removeItem("@user_token");
       tokenRef.current = null;
-      router.replace("/login");
+      router.replace("/login/login");
     } catch (error) {
       console.error("Error signing out:", error);
     }
