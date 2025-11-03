@@ -1,112 +1,64 @@
 // app/login/index.tsx
 import { useAuth } from "@/providers/AuthProvider";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Text, TouchableOpacity, View } from "react-native";
 
 export default function Login() {
   const { signIn } = useAuth();
 
   const handleLogin = () => {
-    // Simulate login - replace with your actual login logic
     signIn("user_auth_token_here");
   };
 
   const handleSkip = () => {
-    // For demo purposes, allow skipping login
     signIn("demo_token");
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Welcome to My App</Text>
-        <Text style={styles.subtitle}>
-          Your amazing app description goes here
+    <View className="flex-1 bg-gradient-to-b from-blue-50 to-white pt-20 px-6">
+      {/* Header */}
+      <View className="items-center mb-16">
+        <View className="w-20 h-20 bg-blue-500 rounded-2xl justify-center items-center mb-6">
+          <Ionicons name="cube" size={32} color="white" />
+        </View>
+        <Text className="text-4xl font-bold text-gray-900 mb-3">
+          Welcome Back
+        </Text>
+        <Text className="text-lg text-gray-600 text-center leading-7 max-w-xs">
+          Sign in to continue your journey with us
         </Text>
       </View>
 
-      <View style={styles.imageContainer}>
-        {/* Replace with your actual image */}
-        <View style={styles.placeholderImage}>
-          <Text style={styles.imageText}>App Logo/Image</Text>
+      {/* Illustration/Image Section */}
+      <View className="flex-1 justify-center items-center">
+        <View className="w-64 h-64 bg-blue-100 rounded-3xl justify-center items-center border-2 border-dashed border-blue-200">
+          <Ionicons name="people" size={64} color="#3b82f6" />
+          <Text className="text-blue-500 text-sm mt-4 font-medium">
+            Your App Illustration
+          </Text>
         </View>
       </View>
 
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Log In</Text>
+      {/* Buttons Section */}
+      <View className="gap-4 pb-8">
+        <TouchableOpacity
+          className="bg-blue-500 py-5 rounded-2xl items-center shadow-lg shadow-blue-500/30 active:bg-blue-600 active:scale-95"
+          onPress={handleLogin}
+        >
+          <Text className="text-white text-lg font-semibold">
+            Sign In to Your Account
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipButtonText}>Skip for Now</Text>
+        <TouchableOpacity
+          className="py-5 rounded-2xl items-center border-2 border-gray-200 active:bg-gray-50 active:scale-95"
+          onPress={handleSkip}
+        >
+          <Text className="text-gray-600 text-base font-medium">
+            Continue as Guest
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-  },
-  header: {
-    alignItems: "center",
-    marginTop: 60,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  placeholderImage: {
-    width: 200,
-    height: 200,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 100,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageText: {
-    color: "#999",
-    fontSize: 14,
-  },
-  buttonsContainer: {
-    gap: 12,
-  },
-  loginButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  skipButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  skipButtonText: {
-    color: "#666",
-    fontSize: 16,
-  },
-});
