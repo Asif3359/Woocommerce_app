@@ -43,18 +43,17 @@ const slides = [
 ];
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signInAsGuest } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
   const handleLogin = () => {
-    // signIn("user_auth_token_here");
     router.replace("/login/login");
   };
 
-  const handleSkip = () => {
-    signIn("demo_token");
+  const handleSkip = async () => {
+    await signInAsGuest();
   };
 
   const onScroll = Animated.event(

@@ -15,12 +15,14 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInAsGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+  
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please enter both email and password");
@@ -28,15 +30,18 @@ export default function Login() {
     }
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      signIn("user_auth_token_here");
-      setIsLoading(false);
-    }, 1500);
+    setError("");
+    await signInWithEmail(email, password, setError, setIsLoading);
   };
 
-  const handleGuestLogin = () => {
-    signIn("guest_token");
+  const handleGuestLogin = async () => {
+    await signInAsGuest();
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setError("");
+    await signInWithGoogle(setError, setIsGoogleLoading);
   };
 
   const handleForgotPassword = () => {
@@ -119,6 +124,13 @@ export default function Login() {
                 </View>
               </View>
 
+              {/* Error Message */}
+              {error ? (
+                <View className="mb-4 p-3 bg-red-50 rounded-xl border border-red-200">
+                  <Text className="text-red-600 text-sm">{error}</Text>
+                </View>
+              ) : null}
+
               {/* Forgot Password */}
               <TouchableOpacity
                 onPress={handleForgotPassword}
@@ -166,8 +178,18 @@ export default function Login() {
                 <TouchableOpacity className="flex-1 bg-blue-50 py-3 rounded-2xl items-center mr-2 border border-blue-100 active:bg-blue-100">
                   <Ionicons name="logo-facebook" size={20} color="#1877F2" />
                 </TouchableOpacity>
-                <TouchableOpacity className="flex-1 bg-red-50 py-3 rounded-2xl items-center mx-2 border border-red-100 active:bg-red-100">
-                  <Ionicons name="logo-google" size={20} color="#DB4437" />
+                <TouchableOpacity
+                  onPress={handleGoogleLogin}
+                  disabled={isGoogleLoading}
+                  className={`flex-1 bg-red-50 py-3 rounded-2xl items-center mx-2 border border-red-100 ${
+                    isGoogleLoading ? "opacity-70" : "active:bg-red-100"
+                  }`}
+                >
+                  {isGoogleLoading ? (
+                    <Ionicons name="refresh" size={20} color="#DB4437" />
+                  ) : (
+                    <Ionicons name="logo-google" size={20} color="#DB4437" />
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity className="flex-1 bg-black py-3 rounded-2xl items-center ml-2 active:bg-gray-800">
                   <Ionicons name="logo-apple" size={20} color="white" />
