@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.asifahammednishst.woocommerce_app",
+      "bundleIdentifier": "com.asifahammednishst.woocommerceapp",
       "supportsTablet": true
     },
     "android": {

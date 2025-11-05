@@ -1,26 +1,50 @@
-// app/(authorized)/(tabs)/_layout.tsx
-import { Ionicons } from "@expo/vector-icons";
+import { Image, StatusBar } from "react-native";
+
 import { Tabs } from "expo-router";
 
+import { Ionicons } from "@expo/vector-icons";
+import { getAuth } from "@react-native-firebase/auth";
+
 export default function TabsLayout() {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#8E8E93",
-        headerShown: false,
-        headerTitleAlign: "center",
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: "#007AFF",
+          tabBarInactiveTintColor: "#8E8E93",
+          headerShown: false,
+          headerTitleAlign: "center",
         }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ color, size }) =>
+              user?.photoURL ? (
+                <Image
+                  source={{ uri: user.photoURL }}
+                  style={{ width: size, height: size, borderRadius: size / 2 }}
+                />
+              ) : (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+          }}
+        />
+      </Tabs>
+    </>
   );
 }

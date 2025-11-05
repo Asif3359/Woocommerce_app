@@ -22,6 +22,8 @@ export default function AuthorizedLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="categories/index" />
+      <Stack.Screen name="products/index" />
     </Stack>
   );
 }
