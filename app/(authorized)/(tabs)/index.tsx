@@ -1,7 +1,7 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -33,6 +33,9 @@ interface ProductItem {
   name: string;
   price: string;
   image: string;
+  originalPrice?: string;
+  rating?: number;
+  inStock?: boolean;
 }
 
 // Mock data with proper typing
@@ -60,121 +63,101 @@ const DISCOUNT_DATA: DiscountItem[] = [
   },
 ];
 
-const CATEGORIES_DATA: CategoryItem[] = [
-  { id: "1", name: "Electronics", icon: "phone-portrait", color: "#FF6B8B" },
-  { id: "2", name: "Fashion", icon: "shirt", color: "#7E6BC9" },
-  { id: "3", name: "Home", icon: "home", color: "#4A90E2" },
-  { id: "4", name: "Sports", icon: "basketball", color: "#50C878" },
-  { id: "5", name: "Books", icon: "book", color: "#FFA500" },
-  { id: "6", name: "Beauty", icon: "flower", color: "#FF69B4" },
-  { id: "7", name: "Toys", icon: "game-controller", color: "#9370DB" },
-  { id: "8", name: "Food", icon: "fast-food", color: "#20B2AA" },
-];
-
-const FEATURED_PRODUCTS: ProductItem[] = [
-  {
-    id: "1",
-    name: "Wireless Headphones",
-    price: "$99.99",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300",
-  },
-  {
-    id: "2",
-    name: "Smart Watch",
-    price: "$199.99",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
-  },
-  {
-    id: "3",
-    name: "Camera Lens",
-    price: "$299.99",
-    image: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=300",
-  },
-  {
-    id: "4",
-    name: "Gaming Mouse",
-    price: "$49.99",
-    image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300",
-  },
-  {
-    id: "5",
-    name: "Laptop",
-    price: "$899.99",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300",
-  },
-  {
-    id: "6",
-    name: "Sunglasses",
-    price: "$79.99",
-    image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300",
-  },
-  {
-    id: "7",
-    name: "Running Shoes",
-    price: "$129.99",
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300",
-  },
-  {
-    id: "8",
-    name: "Backpack",
-    price: "$59.99",
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300",
-  },
-  {
-    id: "9",
-    name: "Coffee Maker",
-    price: "$149.99",
-    image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=300",
-  },
-  {
-    id: "10",
-    name: "Desk Lamp",
-    price: "$39.99",
-    image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=300",
-  },
-  {
-    id: "11",
-    name: "Bluetooth Speaker",
-    price: "$79.99",
-    image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=300",
-  },
-  {
-    id: "12",
-    name: "Yoga Mat",
-    price: "$29.99",
-    image: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=300",
-  },
-  {
-    id: "13",
-    name: "Water Bottle",
-    price: "$24.99",
-    image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=300",
-  },
-  {
-    id: "14",
-    name: "Phone Case",
-    price: "$19.99",
-    image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=300",
-  },
-  {
-    id: "15",
-    name: "Keyboard",
-    price: "$89.99",
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300",
-  },
-  {
-    id: "16",
-    name: "Monitor",
-    price: "$399.99",
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=300",
-  },
-];
+const base_api = "http://10.0.2.2:3000/api";
+const api_end_point = "/products";
+const categories_end_point = "/products/category";
 
 export default function Home() {
   const { signOut, token } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [featuredProducts, setFeaturedProducts] =
-    useState<ProductItem[]>(FEATURED_PRODUCTS);
+  const [featuredProducts, setFeaturedProducts] = useState<ProductItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${base_api}${api_end_point}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.status}`);
+      }
+
+      const productsData = await response.json();
+
+      // Transform API data to match your ProductItem interface
+      const transformedProducts: ProductItem[] = productsData.map(
+        (product: any) => ({
+          id: product._id || product.id,
+          name: product.name,
+          price: `$${product.price}`,
+          image: product.image,
+          // Add other fields if needed
+          originalPrice: product.originalPrice
+            ? `$${product.originalPrice}`
+            : undefined,
+          rating: product.rating,
+          inStock: product.inStock,
+        })
+      );
+
+      setFeaturedProducts(transformedProducts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load products");
+      console.error("Error loading products:", err);
+
+      // Fallback to static data if API fails
+      setFeaturedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch(`${base_api}${categories_end_point}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.status}`);
+      }
+
+      const categoriesData = await response.json();
+
+      // Transform API data to match CategoryItem interface
+      const transformedCategories: CategoryItem[] = categoriesData.map(
+        (category: any) => ({
+          id: category.id || category._id,
+          name: category.name,
+          icon: category.icon as keyof typeof Ionicons.glyphMap,
+          color: category.color,
+        })
+      );
+
+      setCategories(transformedCategories);
+    } catch (err) {
+      console.error("Error loading categories:", err);
+      // Keep empty array if API fails
+      setCategories([]);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+    loadCategories();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-600">Loading products...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   // Fixed render functions with proper typing
   const renderDiscountItem = ({ item }: { item: DiscountItem }) => (
@@ -199,6 +182,7 @@ export default function Home() {
       <TouchableOpacity
         className="w-16 h-16 rounded-full items-center justify-center mb-2"
         style={{ backgroundColor: item.color }}
+        onPress={() => router.push(`/categories/${item.name}`)}
       >
         <Ionicons name={item.icon} size={24} color="white" />
       </TouchableOpacity>
@@ -225,50 +209,78 @@ export default function Home() {
     </View>
   );
 
-  const renderProductGridItem = ({ item }: { item: ProductItem }) => (
-    <View className="w-1/2 mb-3 px-1">
-      <TouchableOpacity
-        className="bg-white rounded-xl relative"
-        activeOpacity={0.7}
-        onPress={() => router.push(`/products/${item.id}`)}
-      >
-        {/* Discount Badge */}
-        <View className="absolute top-2 left-2 bg-red-500 px-2 py-1 rounded-full z-10">
-          <Text className="text-white text-xs font-bold">20% OFF</Text>
-        </View>
+  const renderProductGridItem = ({ item }: { item: ProductItem }) => {
+    // Calculate discount percentage if original price exists
+    const calculateDiscount = () => {
+      if (!item.originalPrice) return null;
+      
+      const original = parseFloat(item.originalPrice.replace('$', ''));
+      const current = parseFloat(item.price.replace('$', ''));
+      
+      // Only show discount if original price is higher than current price
+      if (original > current) {
+        const discountPercentage = Math.round(((original - current) / original) * 100);
+        return discountPercentage;
+      }
+      return null;
+    };
 
-        {/* Wishlist Icon */}
-        <TouchableOpacity className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full items-center justify-center z-10 shadow-sm">
-          <Ionicons name="heart-outline" size={16} color="#666" />
-        </TouchableOpacity>
+    const discount = calculateDiscount();
 
-        {/* Product Image */}
-        <Image
-          source={{ uri: item.image }}
-          className="w-full h-32 rounded-t-xl"
-          resizeMode="cover"
-        />
+    return (
+      <View className="w-1/2 mb-3 px-1">
+        <TouchableOpacity
+          className="bg-white rounded-xl relative"
+          activeOpacity={0.7}
+          onPress={() => router.push(`/products/${item.id}`)}
+        >
+          {/* Discount Badge - Only show if there's a valid discount */}
+          {discount && discount > 0 && (
+            <View className="absolute top-2 left-2 bg-red-500 px-2 py-1 rounded-full z-10">
+              <Text className="text-white text-xs font-bold">{discount}% OFF</Text>
+            </View>
+          )}
 
-        {/* Product Info */}
-        <View className="p-3">
-          <Text
-            className="font-medium text-gray-900 mb-1 text-sm"
-            numberOfLines={2}
-          >
-            {item.name}
-          </Text>
-          <View className="flex-row items-center justify-between mt-2">
-            <Text className="font-bold text-gray-900 text-base">
-              {item.price}
+          {/* Wishlist Icon */}
+          <TouchableOpacity className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full items-center justify-center z-10 shadow-sm">
+            <Ionicons name="heart-outline" size={16} color="#666" />
+          </TouchableOpacity>
+
+          {/* Product Image */}
+          <Image
+            source={{ uri: item.image }}
+            className="w-full h-32 rounded-t-xl"
+            resizeMode="cover"
+          />
+
+          {/* Product Info */}
+          <View className="p-3">
+            <Text
+              className="font-medium text-gray-900 mb-1 text-sm"
+              numberOfLines={2}
+            >
+              {item.name}
             </Text>
-            <TouchableOpacity className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center">
-              <Ionicons name="cart-outline" size={16} color="#666" />
-            </TouchableOpacity>
+            <View className="flex-row items-center justify-between mt-2">
+              <View>
+                <Text className="font-bold text-gray-900 text-base">
+                  {item.price}
+                </Text>
+                {item.originalPrice && discount && discount > 0 && (
+                  <Text className="text-xs text-gray-500 line-through">
+                    {item.originalPrice}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center">
+                <Ionicons name="cart-outline" size={16} color="#666" />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaProvider>
@@ -334,7 +346,7 @@ export default function Home() {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={CATEGORIES_DATA}
+              data={categories}
               renderItem={renderCategoryItem}
               keyExtractor={(item: CategoryItem) => item.id}
               horizontal
@@ -361,16 +373,32 @@ export default function Home() {
                 />
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={featuredProducts}
-              renderItem={renderProductGridItem}
-              keyExtractor={(item: ProductItem) => item.id}
-              numColumns={2}
-              columnWrapperStyle={{ gap: 8 }}
-              contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}
-              showsVerticalScrollIndicator={false}
-              scrollEnabled={false}
-            />
+
+            {
+              error && featuredProducts.length === 0 ? (
+                <View className="flex-1 justify-center items-center">
+                  <Text className="text-gray-500">Error: {error}</Text>
+                  <TouchableOpacity
+                    className="bg-blue-500 px-6 py-3 rounded-full"
+                    onPress={loadProducts}
+                  >
+                    <Text className="text-white font-semibold">Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <FlatList
+                  data={featuredProducts}
+                  renderItem={renderProductGridItem}
+                  keyExtractor={(item: ProductItem) => item.id}
+                  numColumns={2}
+                  columnWrapperStyle={{ gap: 8 }}
+                  contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            
           </View>
         </ScrollView>
       </SafeAreaView>

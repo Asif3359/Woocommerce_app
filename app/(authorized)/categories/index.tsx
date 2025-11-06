@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,27 +12,50 @@ interface CategoryItem {
   color: string;
 }
 
-// Categories data
-const CATEGORIES_DATA: CategoryItem[] = [
-  { id: "1", name: "Electronics", icon: "phone-portrait", color: "#FF6B8B" },
-  { id: "2", name: "Fashion", icon: "shirt", color: "#7E6BC9" },
-  { id: "3", name: "Home", icon: "home", color: "#4A90E2" },
-  { id: "4", name: "Sports", icon: "basketball", color: "#50C878" },
-  { id: "5", name: "Books", icon: "book", color: "#FFA500" },
-  { id: "6", name: "Beauty", icon: "flower", color: "#FF69B4" },
-  { id: "7", name: "Toys", icon: "game-controller", color: "#9370DB" },
-  { id: "8", name: "Food", icon: "fast-food", color: "#20B2AA" },
-  { id: "9", name: "Automotive", icon: "car-sport", color: "#FF4500" },
-  { id: "10", name: "Garden", icon: "leaf", color: "#32CD32" },
-  { id: "11", name: "Music", icon: "musical-notes", color: "#8A2BE2" },
-  { id: "12", name: "Pet Supplies", icon: "paw", color: "#D2691E" },
-  { id: "13", name: "Office", icon: "briefcase", color: "#4682B4" },
-  { id: "14", name: "Baby", icon: "heart", color: "#FFB6C1" },
-  { id: "15", name: "Health", icon: "fitness", color: "#00CED1" },
-  { id: "16", name: "Grocery", icon: "cart", color: "#FF8C00" },
-];
+const base_api = "http://10.0.2.2:3000/api";
+const categories_end_point = "/products/category";
 
 export default function CategoriesScreen() {
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${base_api}${categories_end_point}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.status}`);
+      }
+
+      const categoriesData = await response.json();
+
+      // Transform API data to match CategoryItem interface
+      const transformedCategories: CategoryItem[] = categoriesData.map(
+        (category: any) => ({
+          id: category.id || category._id,
+          name: category.name,
+          icon: category.icon as keyof typeof Ionicons.glyphMap,
+          color: category.color,
+        })
+      );
+
+      setCategories(transformedCategories);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load categories");
+      console.error("Error loading categories:", err);
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
   const renderCategoryItem = ({ item }: { item: CategoryItem }) => (
     <View className="w-1/3 mb-5 px-2">
       {/* Card Container */}
@@ -44,10 +68,7 @@ export default function CategoriesScreen() {
           shadowRadius: 8,
           elevation: 4,
         }}
-        onPress={() => {
-          // Navigate to category details or products
-          console.log(`Selected category: ${item.name}`);
-        }}
+        onPress={() => router.push(`/categories/${item.name}`)}
         activeOpacity={0.7}
       >
         {/* Icon Container */}
@@ -69,6 +90,16 @@ export default function CategoriesScreen() {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-600">Loading categories...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <SafeAreaView className="flex-1 bg-white">
@@ -87,7 +118,7 @@ export default function CategoriesScreen() {
                   All Categories
                 </Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
-                  Browse by category
+                  {categories.length > 0 ? `${categories.length} categories` : "Browse by category"}
                 </Text>
               </View>
             </View>
@@ -107,20 +138,34 @@ export default function CategoriesScreen() {
           style={{ transform: [{ scale: 1.5 }] }}
         />
 
-        {/* Categories Grid */}
-        <View className=" flex-1 bg-gray-50">
-          <FlatList
-            data={CATEGORIES_DATA}
-            renderItem={renderCategoryItem}
-            keyExtractor={(item: CategoryItem) => item.id}
-            numColumns={3}
-            contentContainerStyle={{
-              padding: 16,
-              paddingTop: 12,
-              paddingBottom: 32,
-            }}
-            showsVerticalScrollIndicator={false}
-          />
+        {/* Categories Grid or Error Message */}
+        <View className="flex-1 bg-gray-50">
+          {error && categories.length === 0 ? (
+            <View className="flex-1 justify-center items-center px-8">
+              <Text className="text-lg text-red-500 mb-4 text-center">
+                Error: {error}
+              </Text>
+              <TouchableOpacity
+                className="bg-blue-500 px-6 py-3 rounded-full"
+                onPress={loadCategories}
+              >
+                <Text className="text-white font-semibold">Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={categories}
+              renderItem={renderCategoryItem}
+              keyExtractor={(item: CategoryItem) => item.id}
+              numColumns={3}
+              contentContainerStyle={{
+                padding: 16,
+                paddingTop: 12,
+                paddingBottom: 32,
+              }}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </View>
       </SafeAreaView>
     </SafeAreaProvider>

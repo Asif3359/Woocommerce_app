@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -25,7 +25,9 @@ interface ProductDetails {
   features: string[];
 }
 
-// Mock product details data
+const base_api = "http://10.0.2.2:3000/api";
+
+// Mock product details data (fallback only)
 const PRODUCT_DETAILS: { [key: string]: ProductDetails } = {
   "1": {
     id: "1",
@@ -334,20 +336,57 @@ export default function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get product details or use default
-  const product = PRODUCT_DETAILS[id || "1"] || {
-    id: id || "1",
-    name: "Product Name",
-    price: "$99.99",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800",
-    description: "Product description goes here.",
-    rating: 4.5,
-    reviews: 100,
-    inStock: true,
-    category: "General",
-    features: ["Feature 1", "Feature 2", "Feature 3"]
+  const loadProductDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${base_api}/products/${id}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product: ${response.status}`);
+      }
+
+      const productData = await response.json();
+
+      // Transform API data to match ProductDetails interface
+      const transformedProduct: ProductDetails = {
+        id: productData._id || productData.id,
+        name: productData.name,
+        price: `$${productData.price}`,
+        originalPrice: productData.originalPrice
+          ? `$${productData.originalPrice}`
+          : undefined,
+        image: productData.image,
+        description: productData.description || "No description available.",
+        rating: productData.rating || 0,
+        reviews: productData.reviews || 0,
+        inStock: productData.inStock ?? true,
+        category: productData.category || "General",
+        features: Array.isArray(productData.features) && productData.features.length > 0
+          ? productData.features
+          : ["No features listed"],
+      };
+
+      setProduct(transformedProduct);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load product");
+      console.error("Error loading product details:", err);
+      setProduct(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (id) {
+      loadProductDetails();
+    }
+  }, [id]);
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -363,6 +402,78 @@ export default function ProductDetailsScreen() {
     }
     return stars;
   };
+
+  const calculateDiscount = () => {
+    if (!product?.originalPrice) return null;
+    
+    const original = parseFloat(product.originalPrice.replace('$', ''));
+    const current = parseFloat(product.price.replace('$', ''));
+    
+    // Only show discount if original price is higher than current price
+    if (original > current) {
+      const discountPercentage = Math.round(((original - current) / original) * 100);
+      return discountPercentage;
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-600">Loading product details...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (error && !product) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row items-center justify-between px-5 py-4 bg-white shadow-sm">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+            >
+              <Ionicons name="arrow-back" size={20} color="#333" />
+            </TouchableOpacity>
+            <Text className="text-lg font-bold text-gray-900">Product Details</Text>
+            <View className="w-10" />
+          </View>
+          <View className="flex-1 justify-center items-center px-8">
+            <Text className="text-lg text-red-500 mb-4 text-center">
+              Error: {error}
+            </Text>
+            <TouchableOpacity
+              className="bg-blue-500 px-6 py-3 rounded-full"
+              onPress={loadProductDetails}
+            >
+              <Text className="text-white font-semibold">Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (!product) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 bg-white justify-center items-center">
+          <Text className="text-lg text-gray-600">Product not found</Text>
+          <TouchableOpacity
+            className="bg-blue-500 px-6 py-3 rounded-full mt-4"
+            onPress={() => router.back()}
+          >
+            <Text className="text-white font-semibold">Go Back</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  const discount = calculateDiscount();
 
   return (
     <SafeAreaProvider>
@@ -396,9 +507,9 @@ export default function ProductDetailsScreen() {
               className="w-full h-96"
               resizeMode="cover"
             />
-            {product.originalPrice && (
+            {discount && discount > 0 && (
               <View className="absolute top-4 left-4 bg-red-500 px-3 py-2 rounded-full">
-                <Text className="text-white text-sm font-bold">20% OFF</Text>
+                <Text className="text-white text-sm font-bold">{discount}% OFF</Text>
               </View>
             )}
           </View>
@@ -441,11 +552,6 @@ export default function ProductDetailsScreen() {
               <Text className="text-3xl font-bold text-gray-900">
                 {product.price}
               </Text>
-              {product.originalPrice && (
-                <Text className="text-lg text-gray-400 line-through ml-3">
-                  {product.originalPrice}
-                </Text>
-              )}
             </View>
 
             {/* Description */}

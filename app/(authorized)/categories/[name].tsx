@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,30 +22,37 @@ interface ProductItem {
   inStock?: boolean;
 }
 
-const base_api = "http://10.0.2.2:3000/api";
-const api_end_point = "/products";
+interface CategoryProductsResponse {
+  category: string;
+  products: any[];
+  count: number;
+}
 
-export default function ProductsScreen() {
+const base_api = "http://10.0.2.2:3000/api";
+
+export default function CategoryProductsScreen() {
+  const { name } = useLocalSearchParams<{ name: string }>();
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProducts = async () => {
+  const loadCategoryProducts = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${base_api}${api_end_point}`);
+      const response = await fetch(`${base_api}/products/category/${name}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
       }
 
-      const productsData = await response.json();
+      const data: CategoryProductsResponse = await response.json();
 
-      // Transform API data to match your ProductItem interface
-      const transformedProducts: ProductItem[] = productsData.map(
+      // Transform API data to match ProductItem interface
+      const transformedProducts: ProductItem[] = data.products.map(
         (product: any) => ({
           id: product._id || product.id,
           name: product.name,
@@ -60,9 +67,10 @@ export default function ProductsScreen() {
       );
 
       setProducts(transformedProducts);
+      setCategoryName(data.category);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load products");
-      console.error("Error loading products:", err);
+      console.error("Error loading category products:", err);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -70,20 +78,24 @@ export default function ProductsScreen() {
   };
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (name) {
+      loadCategoryProducts();
+    }
+  }, [name]);
 
   const renderProductGridItem = ({ item }: { item: ProductItem }) => {
     // Calculate discount percentage if original price exists
     const calculateDiscount = () => {
       if (!item.originalPrice) return null;
-      
-      const original = parseFloat(item.originalPrice.replace('$', ''));
-      const current = parseFloat(item.price.replace('$', ''));
-      
+
+      const original = parseFloat(item.originalPrice.replace("$", ""));
+      const current = parseFloat(item.price.replace("$", ""));
+
       // Only show discount if original price is higher than current price
       if (original > current) {
-        const discountPercentage = Math.round(((original - current) / original) * 100);
+        const discountPercentage = Math.round(
+          ((original - current) / original) * 100
+        );
         return discountPercentage;
       }
       return null;
@@ -101,7 +113,9 @@ export default function ProductsScreen() {
           {/* Discount Badge - Only show if there's a valid discount */}
           {discount && discount > 0 && (
             <View className="absolute top-2 left-2 bg-red-500 px-2 py-1 rounded-full z-10">
-              <Text className="text-white text-xs font-bold">{discount}% OFF</Text>
+              <Text className="text-white text-xs font-bold">
+                {discount}% OFF
+              </Text>
             </View>
           )}
 
@@ -150,7 +164,9 @@ export default function ProductsScreen() {
     return (
       <SafeAreaProvider>
         <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-600">Loading products...</Text>
+          <Text className="text-lg text-gray-600">
+            Loading {name} products...
+          </Text>
         </SafeAreaView>
       </SafeAreaProvider>
     );
@@ -171,7 +187,7 @@ export default function ProductsScreen() {
               </TouchableOpacity>
               <View className="flex-1">
                 <Text className="text-2xl font-bold text-gray-900">
-                  All Products
+                  {categoryName || name}
                 </Text>
                 <Text className="text-sm text-gray-500 mt-0.5">
                   {products.length} items available
@@ -214,9 +230,22 @@ export default function ProductsScreen() {
               </Text>
               <TouchableOpacity
                 className="bg-blue-500 px-6 py-3 rounded-full"
-                onPress={loadProducts}
+                onPress={loadCategoryProducts}
               >
                 <Text className="text-white font-semibold">Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : products.length === 0 ? (
+            <View className="flex-1 justify-center items-center px-8">
+              <Ionicons name="basket-outline" size={64} color="#ccc" />
+              <Text className="text-lg text-gray-500 mt-4 text-center">
+                No products found in {categoryName || name}
+              </Text>
+              <TouchableOpacity
+                className="bg-blue-500 px-6 py-3 rounded-full mt-4"
+                onPress={() => router.back()}
+              >
+                <Text className="text-white font-semibold">Go Back</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -240,3 +269,4 @@ export default function ProductsScreen() {
     </SafeAreaProvider>
   );
 }
+
