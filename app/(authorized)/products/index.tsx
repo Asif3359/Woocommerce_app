@@ -20,6 +20,12 @@ interface ProductItem {
   originalPrice?: string;
   rating?: number;
   inStock?: boolean;
+  quantity?: Quantity;
+}
+
+interface Quantity {
+  amount: number;
+  unit: string;
 }
 
 const base_api = "http://10.0.2.2:3000/api";
@@ -56,6 +62,10 @@ export default function ProductsScreen() {
             : undefined,
           rating: product.rating,
           inStock: product.inStock,
+          quantity: {
+            amount: product.quantity?.amount || 0,
+            unit: product.quantity?.unit || '',
+          },
         })
       );
 
@@ -125,8 +135,13 @@ export default function ProductsScreen() {
             >
               {item.name}
             </Text>
+            {item.quantity && (
+              <Text className="text-xs text-gray-500 mb-2">
+                {item.quantity.amount} {item.quantity.unit}
+              </Text>
+            )}
             <View className="flex-row items-center justify-between mt-2">
-              <View>
+              <View className="flex-row items-center gap-2" >
                 <Text className="font-bold text-gray-900 text-base">
                   {item.price}
                 </Text>

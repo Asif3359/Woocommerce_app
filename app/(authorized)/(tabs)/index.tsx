@@ -1,4 +1,3 @@
-import { useAuth } from "@/providers/AuthProvider";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -36,6 +35,12 @@ interface ProductItem {
   originalPrice?: string;
   rating?: number;
   inStock?: boolean;
+  quantity?: Quantity;
+}
+
+interface Quantity {
+  amount: number;
+  unit: string;
 }
 
 // Mock data with proper typing
@@ -68,7 +73,6 @@ const api_end_point = "/products";
 const categories_end_point = "/products/category";
 
 export default function Home() {
-  const { signOut, token } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [featuredProducts, setFeaturedProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -101,6 +105,10 @@ export default function Home() {
             : undefined,
           rating: product.rating,
           inStock: product.inStock,
+          quantity: {
+            amount: product.quantity?.amount || 0,
+            unit: product.quantity?.unit || '',
+          },
         })
       );
 
@@ -149,16 +157,6 @@ export default function Home() {
     loadCategories();
   }, []);
 
-  if (loading) {
-    return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-white justify-center items-center">
-          <Text className="text-lg text-gray-600">Loading products...</Text>
-        </SafeAreaView>
-      </SafeAreaProvider>
-    );
-  }
-
   // Fixed render functions with proper typing
   const renderDiscountItem = ({ item }: { item: DiscountItem }) => (
     <View className="mx-4 rounded-2xl overflow-hidden h-60 w-96">
@@ -192,34 +190,19 @@ export default function Home() {
     </View>
   );
 
-  const renderProductItem = ({ item }: { item: ProductItem }) => (
-    <View className="bg-white rounded-xl p-3 mr-4 shadow-sm border border-gray-100 w-40">
-      <Image
-        source={{ uri: item.image }}
-        className="w-full h-32 rounded-lg mb-3"
-        resizeMode="cover"
-      />
-      <Text
-        className="font-medium text-gray-900 mb-1 text-sm"
-        numberOfLines={2}
-      >
-        {item.name}
-      </Text>
-      <Text className="font-bold text-gray-900">{item.price}</Text>
-    </View>
-  );
-
   const renderProductGridItem = ({ item }: { item: ProductItem }) => {
     // Calculate discount percentage if original price exists
     const calculateDiscount = () => {
       if (!item.originalPrice) return null;
-      
-      const original = parseFloat(item.originalPrice.replace('$', ''));
-      const current = parseFloat(item.price.replace('$', ''));
-      
+
+      const original = parseFloat(item.originalPrice.replace("$", ""));
+      const current = parseFloat(item.price.replace("$", ""));
+
       // Only show discount if original price is higher than current price
       if (original > current) {
-        const discountPercentage = Math.round(((original - current) / original) * 100);
+        const discountPercentage = Math.round(
+          ((original - current) / original) * 100
+        );
         return discountPercentage;
       }
       return null;
@@ -237,7 +220,9 @@ export default function Home() {
           {/* Discount Badge - Only show if there's a valid discount */}
           {discount && discount > 0 && (
             <View className="absolute top-2 left-2 bg-red-500 px-2 py-1 rounded-full z-10">
-              <Text className="text-white text-xs font-bold">{discount}% OFF</Text>
+              <Text className="text-white text-xs font-bold">
+                {discount}% OFF
+              </Text>
             </View>
           )}
 
@@ -259,10 +244,15 @@ export default function Home() {
               className="font-medium text-gray-900 mb-1 text-sm"
               numberOfLines={2}
             >
-              {item.name}
+              {item.name} 
             </Text>
+            {item.quantity && (
+              <Text className="text-xs text-gray-500 mb-2">
+                {item.quantity.amount} {item.quantity.unit}
+              </Text>
+            )}
             <View className="flex-row items-center justify-between mt-2">
-              <View>
+              <View className="flex-row items-center gap-2" >
                 <Text className="font-bold text-gray-900 text-base">
                   {item.price}
                 </Text>
@@ -373,32 +363,30 @@ export default function Home() {
                 />
               </TouchableOpacity>
             </View>
-
-            {
-              error && featuredProducts.length === 0 ? (
-                <View className="flex-1 justify-center items-center">
-                  <Text className="text-gray-500">Error: {error}</Text>
-                  <TouchableOpacity
-                    className="bg-blue-500 px-6 py-3 rounded-full"
-                    onPress={loadProducts}
-                  >
-                    <Text className="text-white font-semibold">Try Again</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <FlatList
-                  data={featuredProducts}
-                  renderItem={renderProductGridItem}
-                  keyExtractor={(item: ProductItem) => item.id}
-                  numColumns={2}
-                  columnWrapperStyle={{ gap: 8 }}
-                  contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            
+            {error && featuredProducts.length === 0 ? (
+              <View className="flex-1 justify-center items-center">
+                <Text className="text-gray-500">Error: {error}</Text>
+                <TouchableOpacity
+                  className="bg-blue-500 px-6 py-3 rounded-full"
+                  onPress={loadProducts}
+                >
+                  <Text className="text-white font-semibold">Try Again</Text>
+                </TouchableOpacity>
+              </View>
+            ) : loading ? (
+              <Text className="text-lg text-gray-600">Loading products...</Text>
+            ) : (
+              <FlatList
+                data={featuredProducts}
+                renderItem={renderProductGridItem}
+                keyExtractor={(item: ProductItem) => item.id}
+                numColumns={2}
+                columnWrapperStyle={{ gap: 8 }}
+                contentContainerStyle={{ gap: 8, paddingHorizontal: 12 }}
+                showsVerticalScrollIndicator={false}
+                scrollEnabled={false}
+              />
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
