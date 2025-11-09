@@ -1,6 +1,7 @@
 // app/_layout.tsx
 import AuthProvider from "@/providers/AuthProvider";
 import RealmProvider from "@/providers/RealmProvider";
+import StripeProvider from "@/providers/StripeProvider";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Stack } from "expo-router";
 import "../global.css";
@@ -13,10 +14,12 @@ GoogleSignin.configure({
 
 export default function RootLayout() {
   return (
-    <RealmProvider>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </AuthProvider>
-    </RealmProvider>
+    <StripeProvider>
+      <RealmProvider>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </AuthProvider>
+      </RealmProvider>
+    </StripeProvider>
   );
 }

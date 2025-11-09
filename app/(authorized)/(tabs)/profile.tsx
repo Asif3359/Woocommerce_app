@@ -1,6 +1,7 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "@react-native-firebase/auth";
+import { router } from "expo-router";
 import React from "react";
 import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -92,6 +93,8 @@ function profile() {
         ],
         { cancelable: true }
       );
+    } else if (item.title === "My Orders") {
+      router.push("/(authorized)/orders");
     } else if (item.action) {
       item.action();
     } else {

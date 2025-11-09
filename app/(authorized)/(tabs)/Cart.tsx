@@ -5,12 +5,12 @@ import { getAuth } from '@react-native-firebase/auth';
 import { router } from 'expo-router';
 import React, { memo } from 'react';
 import {
-    Alert,
-    FlatList,
-    Image,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -154,20 +154,24 @@ function Cart() {
   };
 
   const handleCheckout = () => {
-    Alert.alert(
-      'Checkout',
-      `Proceed to checkout with ${totalItems} item(s) for $${totalPrice.toFixed(2)}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Proceed',
-          onPress: () => {
-            // TODO: Navigate to checkout screen
-            Alert.alert('Success', 'Checkout functionality coming soon!');
-          },
-        },
-      ]
-    );
+    // Prepare cart items for checkout
+    const checkoutItems = cartItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+    }));
+
+    // Navigate to checkout screen
+    router.push({
+      pathname: '/(authorized)/checkout',
+      params: {
+        totalAmount: totalPrice.toString(),
+        totalItems: totalItems.toString(),
+        cartItems: JSON.stringify(checkoutItems),
+      },
+    });
   };
 
   const incrementQuantity = (productId: string, currentQuantity: number) => {
@@ -195,9 +199,9 @@ function Cart() {
             <View className="w-32 h-32 bg-gray-200 rounded-full items-center justify-center mb-6">
               <Ionicons name="cart-outline" size={64} color="#9CA3AF" />
             </View>
-            <Text className="text-2xl font-bold text-gray-800 mb-2">Your Cart is Empty</Text>
-            <Text className="text-gray-500 text-center mb-8">
-              Looks like you haven't added any items to your cart yet.
+            <Text className="text-xl font-bold text-gray-800 mb-2 text-center">Your Cart is Empty</Text>
+            <Text className="text-gray-500 text-center mb-8 text-center">
+              Looks like you haven&apos;t added any items to your cart yet.
             </Text>
             <TouchableOpacity
               className="bg-blue-600 px-8 py-4 rounded-lg"

@@ -1,4 +1,6 @@
+import { useCart } from "@/hooks/useCart";
 import { Ionicons } from "@expo/vector-icons";
+import { getAuth } from "@react-native-firebase/auth";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -10,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { ProductDetails } from "./[id]";
 
 // Define TypeScript interfaces
 interface ProductItem {
@@ -36,6 +39,15 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const currentUser = getAuth().currentUser;
+  const [quantity, setQuantity] = useState(1);
+  const {
+    addToCart,
+    isInCart,
+    getProductQuantity,
+    updateQuantity,
+    removeFromCart,
+  } = useCart(currentUser?.email || "");
 
   const loadProducts = async () => {
     try {
@@ -64,7 +76,7 @@ export default function ProductsScreen() {
           inStock: product.inStock,
           quantity: {
             amount: product.quantity?.amount || 0,
-            unit: product.quantity?.unit || '',
+            unit: product.quantity?.unit || "",
           },
         })
       );
@@ -83,17 +95,33 @@ export default function ProductsScreen() {
     loadProducts();
   }, []);
 
+  const handleAddToCart = (
+    productId: string,
+    product: ProductDetails,
+    quantity: number
+  ) => {
+    const success = addToCart(product, quantity);
+    if (success) {
+      // Show success message or feedback
+      console.log(`Added ${quantity} ${product.name} to cart`);
+      // Optionally reset quantity
+      // setQuantity(1);
+    }
+  };
+
   const renderProductGridItem = ({ item }: { item: ProductItem }) => {
     // Calculate discount percentage if original price exists
     const calculateDiscount = () => {
       if (!item.originalPrice) return null;
-      
-      const original = parseFloat(item.originalPrice.replace('$', ''));
-      const current = parseFloat(item.price.replace('$', ''));
-      
+
+      const original = parseFloat(item.originalPrice.replace("$", ""));
+      const current = parseFloat(item.price.replace("$", ""));
+
       // Only show discount if original price is higher than current price
       if (original > current) {
-        const discountPercentage = Math.round(((original - current) / original) * 100);
+        const discountPercentage = Math.round(
+          ((original - current) / original) * 100
+        );
         return discountPercentage;
       }
       return null;
@@ -111,7 +139,9 @@ export default function ProductsScreen() {
           {/* Discount Badge - Only show if there's a valid discount */}
           {discount && discount > 0 && (
             <View className="absolute top-2 left-2 bg-red-500 px-2 py-1 rounded-full z-10">
-              <Text className="text-white text-xs font-bold">{discount}% OFF</Text>
+              <Text className="text-white text-xs font-bold">
+                {discount}% OFF
+              </Text>
             </View>
           )}
 
@@ -141,7 +171,7 @@ export default function ProductsScreen() {
               </Text>
             )}
             <View className="flex-row items-center justify-between mt-2">
-              <View className="flex-row items-center gap-2" >
+              <View className="flex-row items-center gap-2">
                 <Text className="font-bold text-gray-900 text-base">
                   {item.price}
                 </Text>
@@ -151,9 +181,44 @@ export default function ProductsScreen() {
                   </Text>
                 )}
               </View>
-              <TouchableOpacity className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center">
-                <Ionicons name="cart-outline" size={16} color="#666" />
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                {isInCart(item.id) ? (
+                  <View className="flex-row items-center bg-gray-100 rounded-lg">
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentCartQty = getProductQuantity(item.id);
+                        updateQuantity(item.id, currentCartQty - 1);
+                      }}
+                      className="p-2"
+                    >
+                      <Ionicons name="remove" size={18} color="#4B5563" />
+                    </TouchableOpacity>
+
+                    <Text className="px-4 py-1 font-semibold text-gray-800">
+                      {getProductQuantity(item.id)}
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentCartQty = getProductQuantity(item.id);
+                        updateQuantity(item.id, currentCartQty + 1);
+                      }}
+                      className="p-2"
+                    >
+                      <Ionicons name="add" size={18} color="#4B5563" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleAddToCart(item.id, item as ProductDetails, 1)
+                    }
+                    className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="cart-outline" size={16} color="green" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </TouchableOpacity>

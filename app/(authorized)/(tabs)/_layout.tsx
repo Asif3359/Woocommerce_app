@@ -6,8 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "@react-native-firebase/auth";
 
 export default function TabsLayout() {
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const user = getAuth().currentUser;
 
   return (
     <>

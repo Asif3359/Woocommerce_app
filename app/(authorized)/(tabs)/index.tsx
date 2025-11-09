@@ -1,4 +1,6 @@
+import { useCart } from "@/hooks/useCart";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { getAuth } from "@react-native-firebase/auth";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -11,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { ProductDetails } from "../products/[id]";
 
 // Define TypeScript interfaces
 interface DiscountItem {
@@ -78,6 +81,10 @@ export default function Home() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const currentUser = getAuth().currentUser;
+  const { addToCart, isInCart, getProductQuantity, updateQuantity } = useCart(
+    currentUser?.email || ""
+  );
 
   const loadProducts = async () => {
     try {
@@ -107,7 +114,7 @@ export default function Home() {
           inStock: product.inStock,
           quantity: {
             amount: product.quantity?.amount || 0,
-            unit: product.quantity?.unit || '',
+            unit: product.quantity?.unit || "",
           },
         })
       );
@@ -208,6 +215,18 @@ export default function Home() {
       return null;
     };
 
+    const handleAddToCart = (
+      productId: string,
+      product: ProductDetails,
+      quantity: number
+    ) => {
+      const success = addToCart(product, quantity);
+      if (success) {
+        // Show success message or feedback
+        console.log(`Added ${quantity} ${product.name} to cart`);
+      }
+    };
+
     const discount = calculateDiscount();
 
     return (
@@ -244,7 +263,7 @@ export default function Home() {
               className="font-medium text-gray-900 mb-1 text-sm"
               numberOfLines={2}
             >
-              {item.name} 
+              {item.name}
             </Text>
             {item.quantity && (
               <Text className="text-xs text-gray-500 mb-2">
@@ -252,7 +271,7 @@ export default function Home() {
               </Text>
             )}
             <View className="flex-row items-center justify-between mt-2">
-              <View className="flex-row items-center gap-2" >
+              <View className="flex-row items-center gap-2">
                 <Text className="font-bold text-gray-900 text-base">
                   {item.price}
                 </Text>
@@ -262,9 +281,44 @@ export default function Home() {
                   </Text>
                 )}
               </View>
-              <TouchableOpacity className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center">
-                <Ionicons name="cart-outline" size={16} color="#666" />
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                {isInCart(item.id) ? (
+                  <View className="flex-row items-center bg-gray-100 rounded-lg">
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentCartQty = getProductQuantity(item.id);
+                        updateQuantity(item.id, currentCartQty - 1);
+                      }}
+                      className="p-2"
+                    >
+                      <Ionicons name="remove" size={18} color="#4B5563" />
+                    </TouchableOpacity>
+
+                    <Text className="px-4 py-1 font-semibold text-gray-800">
+                      {getProductQuantity(item.id)}
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        const currentCartQty = getProductQuantity(item.id);
+                        updateQuantity(item.id, currentCartQty + 1);
+                      }}
+                      className="p-2"
+                    >
+                      <Ionicons name="add" size={18} color="#4B5563" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleAddToCart(item.id, item as ProductDetails, 1)
+                    }
+                    className="w-8 h-8 bg-gray-100 rounded-full items-center justify-center"
+                  >
+                    <Ionicons name="cart-outline" size={16} color="green" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </TouchableOpacity>
