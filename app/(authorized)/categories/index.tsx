@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config/api.config";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -12,8 +13,6 @@ interface CategoryItem {
   color: string;
 }
 
-const base_api = "http://10.0.2.2:3000/api";
-const categories_end_point = "/products/category";
 
 export default function CategoriesScreen() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -25,7 +24,7 @@ export default function CategoriesScreen() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${base_api}${categories_end_point}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/category`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.status}`);

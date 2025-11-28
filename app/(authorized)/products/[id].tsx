@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config/api.config";
 import { useCart } from "@/hooks/useCart";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "@react-native-firebase/auth";
@@ -27,7 +28,6 @@ interface ProductDetails {
   quantity: Quantity;
 }
 
-const base_api = "http://10.0.2.2:3000/api";
 
 export default function ProductDetailsScreen() {
   const currentUser = getAuth().currentUser;
@@ -46,7 +46,7 @@ export default function ProductDetailsScreen() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${base_api}/products/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch product: ${response.status}`);

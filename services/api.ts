@@ -1,6 +1,6 @@
 import auth from '@react-native-firebase/auth';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 async function getAuthToken(): Promise<string | null> {
   try {
@@ -85,7 +85,7 @@ export const orderApi = {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -121,7 +121,7 @@ export const orderApi = {
   getMyOrders: async (): Promise<Order[]> => {
     // Get current user (authenticated or from last order)
     const currentUser = auth().currentUser;
-    
+
     if (!currentUser || !currentUser.email) {
       throw new Error('Please log in to view your orders');
     }
@@ -148,7 +148,7 @@ export const orderApi = {
 
   getOrderById: async (orderId: string): Promise<Order> => {
     const token = await getAuthToken();
-    
+
     // Auth is optional for getting order by ID (guest orders)
     const headers: Record<string, string> = {};
     if (token) {
@@ -173,12 +173,12 @@ export const orderApi = {
 export const paymentApi = {
   createPaymentIntent: async (orderId: string): Promise<PaymentIntentResponse> => {
     const token = await getAuthToken();
-    
+
     // Auth is optional for payment (guest orders)
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -196,12 +196,12 @@ export const paymentApi = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to create payment intent' }));
       console.error('Payment intent error:', error);
-      
+
       // Handle specific Stripe errors
       if (error.message?.includes('amount_too_small') || error.message?.includes('50 cents')) {
         throw new Error('Order total must be at least ₹50 for card payments. Please use Cash on Delivery for smaller orders.');
       }
-      
+
       throw new Error(error.message || 'Failed to create payment intent');
     }
 
@@ -212,7 +212,7 @@ export const paymentApi = {
 
   verifyPayment: async (orderId: string): Promise<PaymentVerificationResponse> => {
     const token = await getAuthToken();
-    
+
     // Auth is optional for verification (guest orders)
     const headers: Record<string, string> = {};
     if (token) {

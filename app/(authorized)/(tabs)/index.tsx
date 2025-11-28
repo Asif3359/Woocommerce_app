@@ -1,16 +1,17 @@
+import { API_BASE_URL } from "@/config/api.config";
 import { useCart } from "@/hooks/useCart";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { getAuth } from "@react-native-firebase/auth";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  Image,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ProductDetails } from "../products/[id]";
@@ -71,9 +72,6 @@ const DISCOUNT_DATA: DiscountItem[] = [
   },
 ];
 
-const base_api = "http://10.0.2.2:3000/api";
-const api_end_point = "/products";
-const categories_end_point = "/products/category";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,7 +89,7 @@ export default function Home() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${base_api}${api_end_point}`);
+      const response = await fetch(`${API_BASE_URL}/api/products`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
@@ -133,7 +131,7 @@ export default function Home() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch(`${base_api}${categories_end_point}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/category`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.status}`);

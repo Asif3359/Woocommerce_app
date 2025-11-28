@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config/api.config";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -28,7 +29,6 @@ interface CategoryProductsResponse {
   count: number;
 }
 
-const base_api = "http://10.0.2.2:3000/api";
 
 export default function CategoryProductsScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
@@ -43,7 +43,7 @@ export default function CategoryProductsScreen() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${base_api}/products/category/${name}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/category/${name}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
