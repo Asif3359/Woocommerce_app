@@ -13,8 +13,8 @@ export default function TabsLayout() {
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: "#007AFF",
-          tabBarInactiveTintColor: "#8E8E93",
+          tabBarActiveTintColor: "#22c55e",
+          tabBarInactiveTintColor: "#000000",
           headerShown: false,
           headerTitleAlign: "center",
         }}

@@ -4,6 +4,7 @@ import RealmProvider from "@/providers/RealmProvider";
 import StripeProvider from "@/providers/StripeProvider";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { Stack } from "expo-router";
+import { StatusBar } from "react-native";
 import "../global.css";
 
 GoogleSignin.configure({
@@ -14,6 +15,8 @@ GoogleSignin.configure({
 
 export default function RootLayout() {
   return (
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
     <StripeProvider>
       <RealmProvider>
         <AuthProvider>
@@ -21,5 +24,6 @@ export default function RootLayout() {
         </AuthProvider>
       </RealmProvider>
     </StripeProvider>
+    </>
   );
 }

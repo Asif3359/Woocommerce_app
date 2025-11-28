@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -84,14 +85,14 @@ export default function Signup() {
           >
             {/* Header Section */}
             <View className="items-center pt-6 pb-2">
-              <View className="w-16 h-16 bg-green-500 rounded-2xl justify-center items-center mb-4 shadow-lg shadow-green-500/30">
-                <Ionicons name="person-add" size={28} color="white" />
+              <View className="w-20 h-20 rounded-full justify-center items-center mb-4 shadow-lg shadow-green-500/30">
+                <Image source={require("@/assets/icon/icon.png")} className="w-20 h-20 rounded-full" />
               </View>
               <Text className="text-3xl font-bold text-gray-800 mb-2">
                 Create Account
               </Text>
               <Text className="text-lg text-gray-600 text-center px-8">
-                Join FreshCart for the best grocery shopping experience
+                Join Woo Commerce for the best shopping experience
               </Text>
             </View>
 
